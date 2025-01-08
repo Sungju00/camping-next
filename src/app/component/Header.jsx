@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   AppBar,
@@ -10,6 +10,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  Typography,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
@@ -25,17 +26,81 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import CloseIcon from "@mui/icons-material/Close";
 import { useMediaQuery } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
+import useAuthStore from "../../../store/authStore";
 import "./styles.css";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
 const Header = () => {
   const theme = createTheme(); // 테마 생성
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-
+  const router = useRouter();
+  const {isAuthenticated, removeToken, logout} = useAuthStore();
   // 테마를 사용하여 미디어 쿼리
+
   const isSmallScreen = useMediaQuery("(max-width: 900px)");
 
   const toggleDrawer = (open) => () => setIsDrawerOpen(open);
 
+
+
+  const goMyPage = () => {
+    if(!isAuthenticated){
+      alert("로그인이 필요합니다.");
+      router.push('/authentication/login?from=myPage/myUserInfo');
+      return;
+    }
+    router.push('/myPage/myUserInfo');
+  }
+
+  const logoutEvent = () => {
+    removeToken();
+    logout();
+    router.push('/');
+  }
+  
+  const [isAdmin, setIsAdmin] = useState(false); // 관리자 여부 상태 추가
+  const token = useAuthStore((state) => state.token); // Zustand에서 token 가져오기
+  const LOCAL_API_BASE_URL = process.env.NEXT_PUBLIC_LOCAL_API_BASE_URL;
+  const checkAdmin = async (userIdx) => {
+    try {
+      const API_URL = `${LOCAL_API_BASE_URL}/admin/admins/check-id?user_idx=${userIdx}`;
+      const response = await axios.get(API_URL, {
+        headers: {
+          Authorization:` Bearer ${token}`, // JWT 토큰 사용
+        },
+      });
+      setIsAdmin(response.data); // API 응답 값에 따라 관리자 여부 설정
+    } catch (error) {
+      console.error("관리자 여부 확인 실패:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      getUserIdx(); // 토큰이 있으면 사용자 user_idx 가져오기
+    }
+  }, [token]);
+
+  const getUserIdx = async () => {
+    try {
+      const API_URL = `${LOCAL_API_BASE_URL}/users/profile`;
+      const response = await axios.get(API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}`, // JWT 토큰 사용
+        },
+      });
+      if (response.data.success) {
+        const userIdx = response.data.data.user_idx; // user_idx 추출
+        checkAdmin(userIdx); // 관리자 여부 확인 호출
+      } else {
+        console.error("프로필 가져오기 실패:", response.data.message);
+      }
+    } catch (error) {
+      console.error("프로필 요청 오류:", error);
+    }
+  };
+  
   return (
     <ThemeProvider theme={theme}>
       {" "}
@@ -46,14 +111,16 @@ const Header = () => {
           <Toolbar className="toolbar-container">
             <Box className="toolbar-left">
               <p style={{ color: "#555555" }}>
-                KyungBin Camping. Contact us on 03-000-0000
+                Camplace. Contact us on 03-000-0000
               </p>
             </Box>
 
             <Box className="toolbar-right">
-              <Link href="/" underline="none">
-                <PersonIcon className="icon" />
-              </Link>
+            {isAdmin && ( // 관리자일 때만 링크 표시
+                <Link href="/admin" underline="none">
+                  <PersonIcon className="icon" />
+                </Link>
+              )}
               <Link href="/" underline="none">
                 <AssignmentTurnedInIcon className="icon" />
               </Link>
@@ -83,20 +150,50 @@ const Header = () => {
               </IconButton>
             ) : (
               <Box className="appbar-left-menu">
-                <Link href="/" className="appbar-link">
-                  Sign in
+                  {!isAuthenticated ? <>
+                <Link
+                  href="/authentication/signUp"
+                  className="appbar-link"
+                  style={{
+                    textDecoration: "none",
+                    color: "black",
+                    fontSize: "18px",
+                  }}
+                >
+                  Sign up
                 </Link>
-                <Link href="/" className="appbar-link">
+                <Link
+                  href="/authentication/login"
+                  className="appbar-link"
+                  style={{
+                    textDecoration: "none",
+                    color: "black",
+                    fontSize: "18px",
+                  }}
+                  >
                   Login
-                </Link>
-                <Link href="/notice" className="appbar-link">
+                </Link></> :
+                <Typography
+                  onClick={logoutEvent}
+                  className="appbar-link"
+                  style={{
+                    textDecoration: "none",
+                    color: "black",
+                    fontSize: "18px",
+                    cursor: 'pointer'
+                  }}
+                >
+                  Logout
+                </Typography>
+                }
+                <Link href="/customer-center/notice" className="appbar-link">
                   Customer Service
                 </Link>
               </Box>
             )}
 
             <Box className="appbar-logo">
-              <ForestOutlinedIcon sx={{ fontSize: "40px", color: "#597445" }} />
+              <ForestOutlinedIcon  sx={{ fontSize: "40px", color: "#597445" }} />
             </Box>
 
             {!isSmallScreen && (
@@ -104,10 +201,10 @@ const Header = () => {
                 <Link href="/campinglist" className="appbar-link">
                   Camping GO
                 </Link>
-                <Link href="/" className="appbar-link">
+                <Link href="/MeetingGroup/meeting" className="appbar-link">
                   Together
                 </Link>
-                <Link href="/" className="appbar-link">
+                <Link href="/myPage/myUserInfo" className="appbar-link">
                   My Page
                 </Link>
               </Box>

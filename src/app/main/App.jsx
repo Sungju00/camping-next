@@ -15,7 +15,7 @@ import { EffectFade, Navigation, Pagination, Autoplay, Virtual } from "swiper/mo
 import './styles.css';
 import { useRouter } from "next/navigation";
 
-export default function App() {
+export default function Main() {
     const [data, setData] = useState([]); // 캠핑장 데이터
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRegion, setSelectedRegion] = useState(''); // 지역 선택 상태
@@ -118,19 +118,19 @@ export default function App() {
                     <SwiperSlide>
                         <div className="slide-content">
                             <img src="./images/cam1.webp" alt="Slide 1" />
-                            <div className="slide-text">KyungBin Camping, the perfect retreat in nature !</div>
+                            <div className="slide-text">Camplace: Where Gatherings Come to Life !</div>
                         </div>
                     </SwiperSlide>
                     <SwiperSlide>
                         <div className="slide-content">
                             <img src="./images/campingg2.jpg"  alt="Slide 2" />
-                            <div className="slide-text">Enjoy a relaxing camping trip at KyungBin Camping, book now !</div>
+                            <div className="slide-text">Camplace: Your Destination for Outdoor Memories !</div>
                         </div>
                     </SwiperSlide>
                     <SwiperSlide>
                         <div className="slide-content">
                             <img src="./images/campingg3.jpg"  alt="Slide 3" />
-                            <div className="slide-text">KyungBin Camping makes your camping trip extra special !</div>
+                            <div className="slide-text">Experience Togetherness at Camplace !</div>
                         </div>
                     </SwiperSlide>
                 </Swiper>

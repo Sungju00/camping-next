@@ -45,29 +45,33 @@ function CampgroundSearchPage() {
   const handleSearch = (e) => {
     e.preventDefault();
 
-    // 검색 로직 (캠핑장 이름, 지역, 가격대, 시설, 반려동물 동반 가능, 테마를 기준으로 필터링)
     const filteredResults = data.filter((campground) => {
-      const matchesSearchTerm = campground.facltNm
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+      // 캠핑장 이름 검색
+      const matchesSearchTerm = searchTerm
+        ? campground.facltNm?.toLowerCase().includes(searchTerm.toLowerCase())
+        : true;
 
-      const matchesRegion = region
-        ? campground.doNm.includes(region) // region 필드가 설정된 경우 해당 지역으로 필터링
-        : true; // region이 선택되지 않았으면 모든 캠핑장
+      // 지역 필터링
+      const matchesRegion = region ? campground.doNm?.includes(region) : true;
 
-      const matchesCity = city
-        ? campground.sigunguNm && campground.sigunguNm.includes(city) // 시/군 필터링
-        : true; // city 필터가 비어 있으면 모든 캠핑장
+      // 시/군 필터링
+      const matchesCity = city ? campground.sigunguNm?.includes(city) : true;
 
+      // 반려동물 동반 가능 여부
       const matchesPetFriendly = isPetFriendly
-        ? campground.animalCmgCl === "가능" // 반려동물 동반 가능 여부
+        ? campground.animalCmgCl === "가능" ||
+          campground.animalCmgCl === "가능(소형견)"
         : true;
 
-      const matchesTheme = theme
-        ? campground.lctCl.includes(theme) // 테마 필드에서 필터링
+      // 테마 필터링
+      const matchesTheme = theme ? campground.lctCl?.includes(theme) : true;
+
+      // 캠핑장 종류 필터링
+      const matchesCampingType = type
+        ? campground.induty?.includes(type)
         : true;
 
-      const matchesCampingType = type ? campground.induty.includes(type) : true;
+      // 모든 조건을 만족하는 캠핑장만 반환
       return (
         matchesSearchTerm &&
         matchesRegion &&
@@ -78,7 +82,7 @@ function CampgroundSearchPage() {
       );
     });
 
-    setFilteredData(filteredResults); // 필터링된 결과 설정
+    setFilteredData(filteredResults);
   };
 
   // 컴포넌트가 마운트될 때 API 호출
@@ -96,17 +100,10 @@ function CampgroundSearchPage() {
     router.push(`/campingdetail/${contentId}`); // 디테일 페이지로 이동
   };
 
-  // 페이징
-  // 페이지 변경 시 호출되는 함수
-  const handlePageChange = (event, value) => {
-    setCurrentPage(value); // 페이지 상태 업데이트
+  // 전체 캠핑장 데이터를 지도에 표시하는 페이지로 이동하는 함수
+  const handleMapClick = () => {
+    router.push("/campinglistmap"); // "/test" 지역 페이지 페이지로 이동하여 모든 캠핑장 데이터를 지도에 표시
   };
-  // 현재 페이지에 해당하는 데이터 계산
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = filteredData.slice(startIndex, endIndex);
-  // 전체 페이지 수 계산
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   // 검색
   // 엔터 키로 검색 처리
@@ -146,10 +143,20 @@ function CampgroundSearchPage() {
     "경상남도",
     "제주도",
   ];
+  // 페이징
+  // 페이지 변경 시 호출되는 함수
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value); // 페이지 상태 업데이트
+  };
+  // 현재 페이지에 해당하는 데이터 계산
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentData = filteredData.slice(startIndex, endIndex);
+  // 전체 페이지 수 계산
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   return (
     <>
-  
       {/* Search Bar Section */}
       <div
         style={{
@@ -161,7 +168,6 @@ function CampgroundSearchPage() {
           backgroundSize: "cover", // 이미지 크기 조정
           backgroundPosition: "center", // 이미지 위치 중앙
           padding: "20px",
-          borderRadius: "10px",
         }}
       >
         <div
@@ -380,6 +386,7 @@ function CampgroundSearchPage() {
               border: "1px solid white",
               cursor: "pointer",
             }}
+            onClick={handleMapClick}
           >
             지도로 보기
           </button>
@@ -417,9 +424,9 @@ function CampgroundSearchPage() {
                       padding: "3px",
                     }}
                   >
-                    찜 (예시)개
+                   찜 {item.likeCount}개
                   </span>
-                  {item.animalCmgCl == "가능" && (
+                  {item.animalCmgCl === "가능" ? (
                     <span
                       style={{
                         color: "black",
@@ -431,7 +438,19 @@ function CampgroundSearchPage() {
                     >
                       반려동물 동반 가능
                     </span>
-                  )}
+                  ) : item.animalCmgCl === "가능(소형견)" ? (
+                    <span
+                      style={{
+                        color: "black",
+                        fontSize: "12px",
+                        backgroundColor: "lightblue",
+                        marginLeft: "10px",
+                        padding: "3px",
+                      }}
+                    >
+                      반려동물 동반 가능 (소형견)
+                    </span>
+                  ) : null}
                   <span
                     style={{
                       color: "black",
@@ -441,7 +460,7 @@ function CampgroundSearchPage() {
                       padding: "3px",
                     }}
                   >
-                    리뷰 (예시)개
+                    리뷰 {item.reviewCount}개
                   </span>
                   <h1
                     className="camping-item-title"
@@ -802,8 +821,6 @@ function CampgroundSearchPage() {
           </Stack>
         </div>
       </div>
-
-    
     </>
   );
 }
